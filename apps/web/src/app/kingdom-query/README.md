@@ -15,13 +15,18 @@ Supabase, gated by Row Level Security.
 - `recharts` for results charts
 - `qrcode` for the distribution QR code
 - `framer-motion` for the slide transitions in the survey runner
+- `jspdf` + `jspdf-autotable` for PDF export (results summary & respondent result)
 
 ## Setup
 
 1. Create a Supabase project.
-2. Run `apps/web/supabase/migrations/0001_kingdom_query.sql` in the Supabase
-   SQL editor (or `supabase db push`). It creates the `kq_*` tables, RLS
-   policies, and a response-cap trigger.
+2. Run, in order, in the Supabase SQL editor (or `supabase db push`):
+   - `apps/web/supabase/migrations/0001_kingdom_query.sql` -- core tables
+     (surveys, questions, scoring profiles, responses, answers), RLS, and a
+     response-cap trigger.
+   - `apps/web/supabase/migrations/0002_kingdom_query_archetypes_and_growth.sql`
+     -- archetypes/sub-profiles, respondent-account CRUD, and the leads /
+     newsletter / payment-embed tables.
 3. Copy `.env.example` to `.env.local` and fill in:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -31,21 +36,27 @@ Supabase, gated by Row Level Security.
    ```
    KINGDOM_QUERY_SEED_OWNER_EMAIL=you@example.com npm run seed:kingdom-query
    ```
-   This creates a "Spiritual Gifts Assessment" demo survey at `/s/spiritual-gifts-demo`.
+   This creates a "Spiritual Gifts Assessment" demo survey at `/s/spiritual-gifts-demo`,
+   including a 3-archetype (Leader / Servant / Teacher) scoring setup with one
+   sub-profile nested under each of two archetypes.
 
 ## Where things live
 
 ```
-apps/web/supabase/migrations/0001_kingdom_query.sql   Schema + RLS
-apps/web/src/lib/kingdom-query/                       Types, Supabase client,
-                                                        scoring/logic engines,
-                                                        localStorage helpers
-apps/web/src/components/kingdom-query/builder/        Question builder UI
-apps/web/src/components/kingdom-query/runtime/        Survey-taking UI
-apps/web/src/components/kingdom-query/results/        Results dashboard UI
-apps/web/src/app/kingdom-query/                       Creator dashboard, editor, results
-apps/web/src/app/s/                                    Public survey-taking page
-apps/web/scripts/seed-kingdom-query.ts                 Demo data seeder
+apps/web/supabase/migrations/0001_kingdom_query.sql              Core schema + RLS
+apps/web/supabase/migrations/0002_kingdom_query_archetypes_and_growth.sql
+                                                                   Archetypes, sub-profiles,
+                                                                   respondent CRUD, growth tables
+apps/web/src/lib/kingdom-query/                                  Types, Supabase client,
+                                                                   scoring/archetype/logic engines,
+                                                                   PDF builders, localStorage helpers
+apps/web/src/components/kingdom-query/builder/                   Question/scoring/archetype/growth builder UI
+apps/web/src/components/kingdom-query/runtime/                   Survey-taking UI
+apps/web/src/components/kingdom-query/results/                   Results dashboard UI
+apps/web/src/components/kingdom-query/my-results/                Respondent "my results" answer editor
+apps/web/src/app/kingdom-query/                                  Creator dashboard, editor, results, my-results
+apps/web/src/app/s/                                               Public survey-taking page
+apps/web/scripts/seed-kingdom-query.ts                            Demo data seeder
 ```
 
 ## Feature notes
@@ -80,10 +91,49 @@ survey creator enables it.
 and an `<iframe>` embed snippet. Creators can set a close date and a response
 cap (enforced server-side by a Postgres trigger, not just the UI).
 
+**Archetypes & sub-profiles** (`/kingdom-query/edit?id=<surveyId>`,
+"Archetypes" tab): a two-tier "you are a ___" result layered on top of the
+trait scoring above. An archetype is scored by a **scoring rule** -- pick
+one of three algorithm types:
+  - `highest_trait` -- just reads one trait's score,
+  - `expression` -- a custom formula (same evaluator as trait scoring),
+  - `weighted_sum` -- a weighted combination of several traits.
+Whichever archetype's rule evaluates highest wins (see
+`src/lib/kingdom-query/archetype.ts`). Nest **sub-profiles** under an
+archetype for a second, more specific result (each scored the same way, but
+only competing against sibling sub-profiles under the same archetype). Both
+carry their own result title/body and an optional CTA button+URL, so a
+"special result" can point straight at an offer, booking link, or resource --
+that's also the tie-in point for a payment embed (see Growth below).
+
+**Growth** (`/kingdom-query/edit?id=<surveyId>`, "Growth" tab, plus the
+Results page): every completed response with an answered email question is
+automatically recorded as a lead (`kq_leads`); if the respondent opts in it's
+also added to the newsletter list (`kq_newsletter_subscriptions`). Both are
+viewable/exportable from the Results page. Payment embeds
+(`kq_payment_embeds`) are configuration-only in this pass -- a checkout-link
+URL, a Stripe Payment Element key/price id, or a raw HTML snippet -- ready
+for a future thank-you-screen renderer once you wire up a real
+Stripe/PayPal integration.
+
+**Respondent accounts & CRUD** (`/kingdom-query/my-results`): a respondent
+can optionally create an account right after finishing a survey ("Save my
+results" on the thank-you screen), which claims their anonymous response via
+the `kq_claim_response` RPC (it only succeeds if they hold that response's
+token, so no one can claim someone else's result). From `/my-results` they
+can then **read** their past responses, **update** individual answers (which
+recomputes trait scores and the archetype/sub-profile result), and **delete**
+a response entirely -- independent of the survey's owner or its open/closed
+status.
+
 **Results** (`/kingdom-query/results?id=<surveyId>`): response count and
-completion rate, per-question charts (bar charts for choice questions,
-histograms for rating/NPS, word-frequency bars for free text), an average
-trait-score chart, an individual response browser, and CSV export.
+completion rate, archetype/sub-profile distribution charts, per-question
+charts (bar charts for choice questions, histograms for rating/NPS,
+word-frequency bars for free text), an average trait-score chart, a leads +
+newsletter panel, an individual response browser (now tagged with its
+archetype/sub-profile), and export as **CSV** or a **PDF summary report**
+(`jspdf`/`jspdf-autotable`). Respondents can similarly download a one-page
+PDF of their own result from the thank-you screen.
 
 **Anti-abuse**: by default, one response per browser via a `respondent_token`
 (UUID) stored in both `localStorage` and a cookie. "Strict" mode additionally
@@ -125,3 +175,12 @@ and static export can only pre-render params known at build time.
   where responses must be tamper-proof.
 - "Strict" anti-abuse mode currently just requires an email-type question and
   stores the address; it does not yet send/verify a confirmation code.
+- Payment embeds are schema + builder-config only -- there is no thank-you
+  screen renderer or live Stripe/PayPal SDK wiring yet; `config` just stores
+  what a future renderer would need.
+- If a respondent signs up on the thank-you screen but your Supabase Auth
+  settings require email confirmation, there's no session yet to attach the
+  claim to, so the response is *not* claimed automatically -- confirming and
+  logging in afterward doesn't retroactively link it. Turning off mandatory
+  email confirmation (or adding a "claim by email" flow to `/my-results`) is
+  a follow-up if this matters for your use case.

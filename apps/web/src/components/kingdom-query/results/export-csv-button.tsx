@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { downloadTextFile, toCsv } from "@/lib/kingdom-query/utils";
 import type {
+  Archetype,
   ScoringProfile,
+  SubProfile,
   Survey,
   SurveyAnswer,
   SurveyQuestion,
@@ -17,11 +19,23 @@ interface Props {
   answers: SurveyAnswer[];
   responses: SurveyResponse[];
   profiles: ScoringProfile[];
+  archetypes: Archetype[];
+  subprofiles: SubProfile[];
 }
 
-export function ExportCsvButton({ survey, questions, answers, responses, profiles }: Props) {
+export function ExportCsvButton({
+  survey,
+  questions,
+  answers,
+  responses,
+  profiles,
+  archetypes,
+  subprofiles,
+}: Props) {
   function handleExport() {
     const sortedQuestions = [...questions].sort((a, b) => a.position - b.position);
+    const archetypeById = new Map(archetypes.map((a) => [a.id, a]));
+    const subprofileById = new Map(subprofiles.map((s) => [s.id, s]));
     const rows = responses.map((response) => {
       const row: Record<string, string | number> = {
         response_id: response.id,
@@ -29,6 +43,10 @@ export function ExportCsvButton({ survey, questions, answers, responses, profile
         started_at: response.started_at,
         completed_at: response.completed_at ?? "",
         opted_in: response.opted_in ? "yes" : "no",
+        archetype: response.archetype_id ? archetypeById.get(response.archetype_id)?.label ?? "" : "",
+        subprofile: response.subprofile_id
+          ? subprofileById.get(response.subprofile_id)?.label ?? ""
+          : "",
       };
       for (const question of sortedQuestions) {
         const answer = answers.find(

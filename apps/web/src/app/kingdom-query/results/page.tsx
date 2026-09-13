@@ -7,17 +7,28 @@ import { useKingdomQueryAuth } from "@/lib/kingdom-query/use-auth";
 import {
   getSurveyForEditing,
   listAnswersForSurvey,
+  listLeadsForSurvey,
+  listNewsletterSubscriptionsForSurvey,
   listResponsesForSurvey,
 } from "@/lib/kingdom-query/db";
-import type { SurveyAnswer, SurveyResponse, SurveyWithQuestions } from "@/lib/kingdom-query/types";
+import type {
+  Lead,
+  NewsletterSubscription,
+  SurveyAnswer,
+  SurveyResponse,
+  SurveyWithQuestions,
+} from "@/lib/kingdom-query/types";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ResultsOverview } from "@/components/kingdom-query/results/results-overview";
 import { QuestionCharts } from "@/components/kingdom-query/results/question-charts";
 import { ScoringBreakdown } from "@/components/kingdom-query/results/scoring-breakdown";
+import { ArchetypeBreakdown } from "@/components/kingdom-query/results/archetype-breakdown";
+import { GrowthPanel } from "@/components/kingdom-query/results/growth-panel";
 import { ResponseBrowser } from "@/components/kingdom-query/results/response-browser";
 import { ExportCsvButton } from "@/components/kingdom-query/results/export-csv-button";
+import { ExportPdfButton } from "@/components/kingdom-query/results/export-pdf-button";
 
 function ResultsPageInner() {
   const { user, loading } = useKingdomQueryAuth();
@@ -28,18 +39,24 @@ function ResultsPageInner() {
   const [survey, setSurvey] = useState<SurveyWithQuestions | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [answers, setAnswers] = useState<SurveyAnswer[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [subscriptions, setSubscriptions] = useState<NewsletterSubscription[]>([]);
 
   const load = useCallback(async () => {
     if (!surveyId) return;
     try {
-      const [surveyData, responseData, answerData] = await Promise.all([
+      const [surveyData, responseData, answerData, leadData, subscriptionData] = await Promise.all([
         getSurveyForEditing(surveyId),
         listResponsesForSurvey(surveyId),
         listAnswersForSurvey(surveyId),
+        listLeadsForSurvey(surveyId),
+        listNewsletterSubscriptionsForSurvey(surveyId),
       ]);
       setSurvey(surveyData);
       setResponses(responseData);
       setAnswers(answerData);
+      setLeads(leadData);
+      setSubscriptions(subscriptionData);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to load results");
     }
@@ -65,19 +82,35 @@ function ResultsPageInner() {
           </Button>
         </Link>
         <h1 className="text-lg font-semibold">{survey.title} — Results</h1>
-        <ExportCsvButton
-          survey={survey}
-          questions={survey.questions}
-          answers={answers}
-          responses={responses}
-          profiles={survey.scoring_profiles}
-        />
+        <div className="ml-auto flex gap-2">
+          <ExportPdfButton
+            survey={survey}
+            responses={responses}
+            archetypes={survey.archetypes}
+            scoringProfiles={survey.scoring_profiles}
+          />
+          <ExportCsvButton
+            survey={survey}
+            questions={survey.questions}
+            answers={answers}
+            responses={responses}
+            profiles={survey.scoring_profiles}
+            archetypes={survey.archetypes}
+            subprofiles={survey.subprofiles}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-6">
         <ResultsOverview responses={responses} />
+        <ArchetypeBreakdown
+          archetypes={survey.archetypes}
+          subprofiles={survey.subprofiles}
+          responses={responses}
+        />
         <ScoringBreakdown profiles={survey.scoring_profiles} responses={responses} />
         <QuestionCharts questions={survey.questions} answers={answers} />
+        <GrowthPanel leads={leads} subscriptions={subscriptions} />
         <div>
           <h2 className="mb-2 text-sm font-medium text-muted-foreground">Individual responses</h2>
           <ResponseBrowser
@@ -85,6 +118,8 @@ function ResultsPageInner() {
             answers={answers}
             questions={survey.questions}
             profiles={survey.scoring_profiles}
+            archetypes={survey.archetypes}
+            subprofiles={survey.subprofiles}
           />
         </div>
       </div>

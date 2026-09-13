@@ -71,6 +71,9 @@ export default function KingdomQueryDashboard() {
           <p className="text-sm text-muted-foreground">Your surveys and assessments</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/kingdom-query/my-results">
+            <Button variant="ghost">My Results</Button>
+          </Link>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger
               render={

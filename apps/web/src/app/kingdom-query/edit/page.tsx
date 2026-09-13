@@ -4,15 +4,24 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKingdomQueryAuth } from "@/lib/kingdom-query/use-auth";
 import {
+  deleteArchetype,
+  deletePaymentEmbed,
   deleteQuestion,
   deleteScoringProfile,
+  deleteSubProfile,
   getSurveyForEditing,
   updateSurvey,
+  upsertArchetypes,
+  upsertPaymentEmbeds,
   upsertQuestions,
   upsertScoringProfiles,
+  upsertSubProfiles,
 } from "@/lib/kingdom-query/db";
 import type {
+  Archetype,
+  PaymentEmbed,
   ScoringProfile,
+  SubProfile,
   SurveyQuestion,
   SurveyWithQuestions,
 } from "@/lib/kingdom-query/types";
@@ -25,6 +34,8 @@ import Link from "next/link";
 import { QuestionList } from "@/components/kingdom-query/builder/question-list";
 import { ThemeEditor } from "@/components/kingdom-query/builder/theme-editor";
 import { ScoringEditor } from "@/components/kingdom-query/builder/scoring-editor";
+import { ArchetypeEditor } from "@/components/kingdom-query/builder/archetype-editor";
+import { GrowthEditor } from "@/components/kingdom-query/builder/growth-editor";
 import { DistributionPanel } from "@/components/kingdom-query/builder/distribution-panel";
 import { PreviewMode } from "@/components/kingdom-query/builder/preview-mode";
 
@@ -131,6 +142,74 @@ function SurveyBuilderPageInner() {
     }
   }
 
+  async function handleArchetypesChange(archetypes: Archetype[]) {
+    if (!survey) return;
+    setSurvey((s) => (s ? { ...s, archetypes } : s));
+    try {
+      const saved = await upsertArchetypes(survey.id, archetypes);
+      setSurvey((s) => (s ? { ...s, archetypes: saved } : s));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save archetypes");
+    }
+  }
+
+  async function handleDeleteArchetype(id: string) {
+    setSurvey((s) =>
+      s
+        ? {
+            ...s,
+            archetypes: s.archetypes.filter((a) => a.id !== id),
+            subprofiles: s.subprofiles.filter((sp) => sp.archetype_id !== id),
+          }
+        : s
+    );
+    try {
+      await deleteArchetype(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete archetype");
+    }
+  }
+
+  async function handleSubProfilesChange(subprofiles: SubProfile[]) {
+    if (!survey) return;
+    setSurvey((s) => (s ? { ...s, subprofiles } : s));
+    try {
+      const saved = await upsertSubProfiles(survey.id, subprofiles);
+      setSurvey((s) => (s ? { ...s, subprofiles: saved } : s));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save sub-profiles");
+    }
+  }
+
+  async function handleDeleteSubProfile(id: string) {
+    setSurvey((s) => (s ? { ...s, subprofiles: s.subprofiles.filter((sp) => sp.id !== id) } : s));
+    try {
+      await deleteSubProfile(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete sub-profile");
+    }
+  }
+
+  async function handlePaymentEmbedsChange(embeds: PaymentEmbed[]) {
+    if (!survey) return;
+    setSurvey((s) => (s ? { ...s, payment_embeds: embeds } : s));
+    try {
+      const saved = await upsertPaymentEmbeds(survey.id, embeds);
+      setSurvey((s) => (s ? { ...s, payment_embeds: saved } : s));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save payment embeds");
+    }
+  }
+
+  async function handleDeletePaymentEmbed(id: string) {
+    setSurvey((s) => (s ? { ...s, payment_embeds: s.payment_embeds.filter((e) => e.id !== id) } : s));
+    try {
+      await deletePaymentEmbed(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete payment embed");
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex items-center gap-3">
@@ -155,7 +234,9 @@ function SurveyBuilderPageInner() {
         <TabsList>
           <TabsTrigger value="questions">Questions</TabsTrigger>
           <TabsTrigger value="scoring">Scoring</TabsTrigger>
+          <TabsTrigger value="archetypes">Archetypes</TabsTrigger>
           <TabsTrigger value="design">Design</TabsTrigger>
+          <TabsTrigger value="growth">Growth</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
           <TabsTrigger value="distribute">Distribute</TabsTrigger>
         </TabsList>
@@ -176,8 +257,28 @@ function SurveyBuilderPageInner() {
           />
         </TabsContent>
 
+        <TabsContent value="archetypes" className="mt-4">
+          <ArchetypeEditor
+            archetypes={survey.archetypes}
+            subprofiles={survey.subprofiles}
+            onArchetypesChange={handleArchetypesChange}
+            onDeleteArchetype={handleDeleteArchetype}
+            onSubProfilesChange={handleSubProfilesChange}
+            onDeleteSubProfile={handleDeleteSubProfile}
+          />
+        </TabsContent>
+
         <TabsContent value="design" className="mt-4">
           <ThemeEditor survey={survey} onChange={handleSurveyPatch} />
+        </TabsContent>
+
+        <TabsContent value="growth" className="mt-4">
+          <GrowthEditor
+            survey={survey}
+            paymentEmbeds={survey.payment_embeds}
+            onPaymentEmbedsChange={handlePaymentEmbedsChange}
+            onDeletePaymentEmbed={handleDeletePaymentEmbed}
+          />
         </TabsContent>
 
         <TabsContent value="preview" className="mt-4">
