@@ -2,7 +2,8 @@
  * Seeds a demo "Kingdom Query" personality assessment survey.
  *
  * Usage:
- *   1. Apply supabase/migrations/0001_kingdom_query.sql to your Supabase project.
+ *   1. Apply supabase/migrations/0001_kingdom_query.sql and
+ *      0002_kingdom_query_archetypes_and_growth.sql to your Supabase project.
  *   2. Sign up once at /kingdom-query/login so an owner account exists.
  *   3. Fill in .env.local: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
  *      KINGDOM_QUERY_SEED_OWNER_EMAIL.
@@ -139,6 +140,70 @@ async function main() {
 
   const { error: pErr } = await supabase.from("kq_scoring_profiles").upsert(profiles);
   if (pErr) throw pErr;
+
+  const leaderId = randomUUID();
+  const serverId = randomUUID();
+  const archetypes = [
+    {
+      id: leaderId,
+      survey_id: surveyId,
+      key: "leader",
+      label: "The Leader",
+      scoring_rule: { type: "highest_trait", trait: "leadership" },
+      result_title: "You're a Leader!",
+      result_body: "You're wired to cast vision and rally people toward a goal.",
+      position: 0,
+    },
+    {
+      id: serverId,
+      survey_id: surveyId,
+      key: "server",
+      label: "The Servant",
+      scoring_rule: { type: "weighted_sum", weights: { service: 1, mercy: 0.5 } },
+      result_title: "You're a Servant!",
+      result_body: "You're gifted at practical, behind-the-scenes care for others.",
+      position: 1,
+    },
+    {
+      id: randomUUID(),
+      survey_id: surveyId,
+      key: "teacher",
+      label: "The Teacher",
+      scoring_rule: { type: "expression", expression: "teaching + giving * 0.2" },
+      result_title: "You're a Teacher!",
+      result_body: "You're gifted at explaining truth in a way that sticks.",
+      position: 2,
+    },
+  ];
+  const { error: archErr } = await supabase.from("kq_archetypes").upsert(archetypes);
+  if (archErr) throw archErr;
+
+  const subprofiles = [
+    {
+      id: randomUUID(),
+      archetype_id: leaderId,
+      survey_id: surveyId,
+      key: "leader_visionary",
+      label: "Visionary",
+      scoring_rule: { type: "highest_trait", trait: "leadership" },
+      result_title: "Visionary Leader",
+      result_body: "You see where things could go before anyone else does.",
+      position: 0,
+    },
+    {
+      id: randomUUID(),
+      archetype_id: serverId,
+      survey_id: surveyId,
+      key: "server_encourager",
+      label: "Encourager",
+      scoring_rule: { type: "highest_trait", trait: "mercy" },
+      result_title: "Encouraging Servant",
+      result_body: "People feel cared for the moment they're around you.",
+      position: 0,
+    },
+  ];
+  const { error: subErr } = await supabase.from("kq_subprofiles").upsert(subprofiles);
+  if (subErr) throw subErr;
 
   console.log(`Seeded demo survey "${slug}" for ${ownerEmail}.`);
   console.log(`Take it at /s/${slug}`);

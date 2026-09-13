@@ -5,18 +5,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { ScoringProfile, SurveyAnswer, SurveyQuestion, SurveyResponse } from "@/lib/kingdom-query/types";
+import type {
+  Archetype,
+  ScoringProfile,
+  SubProfile,
+  SurveyAnswer,
+  SurveyQuestion,
+  SurveyResponse,
+} from "@/lib/kingdom-query/types";
 
 interface Props {
   responses: SurveyResponse[];
   answers: SurveyAnswer[];
   questions: SurveyQuestion[];
   profiles: ScoringProfile[];
+  archetypes: Archetype[];
+  subprofiles: SubProfile[];
 }
 
-export function ResponseBrowser({ responses, answers, questions, profiles }: Props) {
+export function ResponseBrowser({ responses, answers, questions, profiles, archetypes, subprofiles }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const sortedQuestions = [...questions].sort((a, b) => a.position - b.position);
+  const archetypeById = new Map(archetypes.map((a) => [a.id, a]));
+  const subprofileById = new Map(subprofiles.map((s) => [s.id, s]));
 
   return (
     <div className="flex flex-col gap-2">
@@ -39,6 +50,14 @@ export function ResponseBrowser({ responses, answers, questions, profiles }: Pro
                     {new Date(response.started_at).toLocaleString()}
                   </span>
                   {response.opted_in && <Badge variant="outline">opted in</Badge>}
+                  {response.archetype_id && archetypeById.has(response.archetype_id) && (
+                    <Badge variant="outline">
+                      {archetypeById.get(response.archetype_id)!.label}
+                      {response.subprofile_id && subprofileById.has(response.subprofile_id)
+                        ? ` · ${subprofileById.get(response.subprofile_id)!.label}`
+                        : ""}
+                    </Badge>
+                  )}
                 </div>
                 {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </button>

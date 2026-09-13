@@ -2,11 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { AnswerValue, SurveyQuestion, SurveyWithQuestions } from "@/lib/kingdom-query/types";
+import type {
+  AnswerValue,
+  Archetype,
+  SubProfile,
+  SurveyQuestion,
+  SurveyWithQuestions,
+} from "@/lib/kingdom-query/types";
 import { resolveNextQuestionId } from "@/lib/kingdom-query/logic";
 import { computeScores } from "@/lib/kingdom-query/scoring";
+import { resolveArchetype, resolveSubProfile } from "@/lib/kingdom-query/archetype";
+import { buildRespondentResultPdf } from "@/lib/kingdom-query/pdf";
 import { ProgressBar } from "./progress-bar";
 import { QuestionScreen } from "./question-screen";
+import { ClaimAccountForm } from "./claim-account-form";
 import {
   clearDraft,
   getOrCreateRespondentToken,
@@ -17,6 +26,8 @@ import {
 } from "@/lib/kingdom-query/storage";
 import {
   completeResponse,
+  createLead,
+  createNewsletterSubscription,
   getOrCreateResponse,
   saveAnswer,
   setRespondentEmail,
@@ -42,6 +53,9 @@ export function SurveyRunner({ survey, preview = false }: Props) {
   const [optedIn, setOptedIn] = useState(false);
   const [responseId, setResponseId] = useState<string | null>(null);
   const [direction, setDirection] = useState(1);
+  const [resultArchetype, setResultArchetype] = useState<Archetype | null>(null);
+  const [resultSubProfile, setResultSubProfile] = useState<SubProfile | null>(null);
+  const [resultScores, setResultScores] = useState<Record<string, number>>({});
 
   const isClosed =
     survey.status === "closed" ||
@@ -126,25 +140,61 @@ export function SurveyRunner({ survey, preview = false }: Props) {
   }
 
   async function finish() {
+    const { scores, vars } = computeScores(
+      sortedQuestions,
+      Object.entries(answers).map(([question_id, value]) => ({ question_id, value })),
+      survey.scoring_profiles
+    );
+    const archetype = resolveArchetype(vars, survey.archetypes);
+    const subProfile = archetype ? resolveSubProfile(vars, archetype, survey.subprofiles) : null;
+    setResultArchetype(archetype);
+    setResultSubProfile(subProfile);
+    setResultScores(scores);
+
     if (preview) {
       setStage("thank_you");
       return;
     }
+
     try {
       const id = await ensureResponse();
       if (id) {
-        const scores = computeScores(
-          sortedQuestions,
-          Object.entries(answers).map(([question_id, value]) => ({ question_id, value })),
-          survey.scoring_profiles
-        );
-        await completeResponse(id, { scores, opted_in: optedIn });
+        await completeResponse(id, {
+          scores,
+          opted_in: optedIn,
+          archetype_id: archetype?.id ?? null,
+          subprofile_id: subProfile?.id ?? null,
+        });
+
+        const emailQuestion = sortedQuestions.find((q) => q.type === "email");
+        const email = emailQuestion ? (answers[emailQuestion.id] as string | undefined) : undefined;
+        if (email) {
+          await createLead({ survey_id: survey.id, response_id: id, email, source: "survey_completion" }).catch(
+            () => undefined
+          );
+          if (survey.ask_opt_in && optedIn) {
+            await createNewsletterSubscription({ survey_id: survey.id, response_id: id, email }).catch(
+              () => undefined
+            );
+          }
+        }
       }
       markSurveyCompleted(survey.slug);
       clearDraft(survey.slug);
     } finally {
       setStage("thank_you");
     }
+  }
+
+  function downloadResultPdf() {
+    const doc = buildRespondentResultPdf({
+      survey,
+      archetype: resultArchetype,
+      subProfile: resultSubProfile,
+      scores: resultScores,
+      scoringProfiles: survey.scoring_profiles,
+    });
+    doc.save(`${survey.slug}-result.pdf`);
   }
 
   function start() {
@@ -243,10 +293,64 @@ export function SurveyRunner({ survey, preview = false }: Props) {
             key="thank_you"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex w-full max-w-xl flex-col gap-4 text-center"
+            className="flex w-full max-w-xl flex-col items-center gap-4 text-center"
           >
-            <h1 className="text-3xl font-bold">{survey.thank_you.title}</h1>
-            {survey.thank_you.body && <p className="text-muted-foreground">{survey.thank_you.body}</p>}
+            {resultArchetype ? (
+              <>
+                <h1 className="text-3xl font-bold">
+                  {resultArchetype.result_title || resultArchetype.label}
+                </h1>
+                {resultArchetype.result_body && (
+                  <p className="text-muted-foreground">{resultArchetype.result_body}</p>
+                )}
+                {resultSubProfile && (
+                  <div className="mt-2 flex flex-col gap-1">
+                    <h2 className="text-xl font-semibold">
+                      {resultSubProfile.result_title || resultSubProfile.label}
+                    </h2>
+                    {resultSubProfile.result_body && (
+                      <p className="text-sm text-muted-foreground">{resultSubProfile.result_body}</p>
+                    )}
+                  </div>
+                )}
+                {(resultSubProfile?.result_cta_url || resultArchetype.result_cta_url) && (
+                  <a
+                    href={resultSubProfile?.result_cta_url || resultArchetype.result_cta_url || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-md px-6 py-2.5 font-medium text-white"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {resultSubProfile?.result_cta_label || resultArchetype.result_cta_label || "Learn more"}
+                  </a>
+                )}
+              </>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold">{survey.thank_you.title}</h1>
+                {survey.thank_you.body && <p className="text-muted-foreground">{survey.thank_you.body}</p>}
+              </>
+            )}
+
+            {!preview && (
+              <button
+                type="button"
+                onClick={downloadResultPdf}
+                className="text-sm underline text-muted-foreground"
+              >
+                Download your result as PDF
+              </button>
+            )}
+
+            {!preview && responseId && (
+              <div className="mt-4 w-full border-t pt-4">
+                <ClaimAccountForm
+                  responseId={responseId}
+                  respondentToken={getOrCreateRespondentToken(survey.slug)}
+                  accentColor={accentColor}
+                />
+              </div>
+            )}
           </motion.div>
         )}
 

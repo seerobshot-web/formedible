@@ -11,6 +11,17 @@ export interface AnswerRecord {
   value: AnswerValue;
 }
 
+export interface ScoreResult {
+  /** Final per-trait scores (after each profile's optional expression runs). */
+  scores: Record<string, number>;
+  /**
+   * All variables available for archetype/sub-profile scoring rules: raw
+   * trait sums, the final per-profile scores (these win on key collision),
+   * and `total`.
+   */
+  vars: Record<string, number>;
+}
+
 /**
  * Computes final trait scores for a completed response.
  *
@@ -25,7 +36,7 @@ export function computeScores(
   questions: SurveyQuestion[],
   answers: AnswerRecord[],
   profiles: ScoringProfile[]
-): Record<string, number> {
+): ScoreResult {
   const questionById = new Map(questions.map((q) => [q.id, q]));
   const rawSums: Record<string, number> = {};
 
@@ -44,23 +55,26 @@ export function computeScores(
   }
 
   const total = Object.values(rawSums).reduce((a, b) => a + b, 0);
-  const vars: Record<string, number> = { ...rawSums, total };
+  const evalVars: Record<string, number> = { ...rawSums, total };
   // ensure every declared profile key is at least 0 so expressions referencing
   // a trait with no responses yet don't blow up
   for (const profile of profiles) {
-    if (!(profile.key in vars)) vars[profile.key] = 0;
+    if (!(profile.key in evalVars)) evalVars[profile.key] = 0;
   }
 
   const finalScores: Record<string, number> = {};
   for (const profile of profiles) {
     if (profile.expression && profile.expression.trim().length > 0) {
-      finalScores[profile.key] = evaluateExpression(profile.expression, vars);
+      finalScores[profile.key] = evaluateExpression(profile.expression, evalVars);
     } else {
-      finalScores[profile.key] = vars[profile.key] ?? 0;
+      finalScores[profile.key] = evalVars[profile.key] ?? 0;
     }
   }
 
-  return finalScores;
+  return {
+    scores: finalScores,
+    vars: { ...rawSums, ...finalScores, total },
+  };
 }
 
 function normalizeToOptionIds(value: AnswerValue): string[] {
