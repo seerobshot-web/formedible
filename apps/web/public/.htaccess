@@ -1,0 +1,21 @@
+# Kingdom Query on static (Hostinger Business) hosting
+#
+# This site is exported by `next build` (output: "export") into plain HTML
+# files -- there is no Node.js server here. Two features need help from
+# Apache because Next can't pre-render pages whose path segment is only known
+# at runtime (survey slugs, survey ids created after the site is built):
+#
+#   /s/<slug>              -> served by s.html, slug read from the URL by JS
+#   /kingdom-query/edit     -> already static; survey id passed as ?id=
+#   /kingdom-query/results  -> already static; survey id passed as ?id=
+#
+# The rewrite below keeps the pretty "/s/<slug>" URL in the address bar (no
+# redirect) while actually serving the single static survey-runner page.
+RewriteEngine On
+
+# /s/<anything> -> /s.html (internal rewrite, URL bar unchanged)
+RewriteCond %{REQUEST_URI} ^/s/[^/]+/?$
+RewriteRule ^s/([^/]+)/?$ /s.html [L]
+
+# Fall back to Next's default 404 page for anything else that's missing.
+ErrorDocument 404 /404.html
