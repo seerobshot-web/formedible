@@ -132,6 +132,25 @@ function main() {
   const aiBuilderSourceBase = 'packages/ai-builder/src';
   totalCopied += processRegistry(aiBuilderRegistry, aiBuilderSourceBase, webDestBase);
 
+  // Process parser registry -> web app
+  const parserRegistry = 'packages/formedible-parser/public/r/formedible-parser.json';
+  const parserSourceBase = 'packages/formedible-parser/src'; 
+  totalCopied += processRegistry(parserRegistry, parserSourceBase, webDestBase);
+
+  // Process parser registry -> ai-builder  
+  totalCopied += processRegistry(parserRegistry, parserSourceBase, aiBuilderDestBase);
+
+  // Process parser registry -> builder
+  const builderDestBase = 'packages/builder/src';
+  totalCopied += processRegistry(parserRegistry, parserSourceBase, builderDestBase);
+
+  // Process formedible registry -> formedible-parser (so parser can use real types)
+  const parserDestBase = 'packages/formedible-parser/src';
+  totalCopied += processRegistry(formedibleRegistry, formedibleSourceBase, parserDestBase);
+
+  // Process formedible registry -> builder
+  totalCopied += processRegistry(formedibleRegistry, formedibleSourceBase, builderDestBase);
+
   logSuccess(`Quick sync complete! ${totalCopied} files copied. 🎉`);
 }
 

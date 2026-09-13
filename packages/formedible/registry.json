@@ -18,6 +18,7 @@
         "label",
         "calendar",
         "popover",
+        "command",
         "badge",
         "slider",
         "radio-group",
@@ -28,12 +29,16 @@
       ],
       "dependencies": [
         "@tanstack/react-form",
+        "@tanstack/form-core",
         "zod",
         "date-fns",
         "react-day-picker",
         "lucide-react",
         "clsx",
-        "tailwind-merge"
+        "tailwind-merge",
+        "@dnd-kit/core",
+        "@dnd-kit/sortable",
+        "@dnd-kit/utilities"
       ],
       "files": [
         {
@@ -46,6 +51,10 @@
         },
         {
           "path": "src/lib/formedible/colors.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "src/lib/formedible/date.ts",
           "type": "registry:lib"
         },
         {
@@ -125,6 +134,14 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/formedible/fields/combobox-field.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/formedible/fields/multicombobox-field.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/formedible/fields/number-field.tsx",
           "type": "registry:component"
         },
@@ -183,4 +200,4 @@
       ]
     }
   ]
-} 
+}

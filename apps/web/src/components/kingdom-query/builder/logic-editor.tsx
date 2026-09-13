@@ -93,7 +93,9 @@ export function LogicEditor({ question, allQuestions, onChange }: Props) {
 
           <Select
             value={rule.targetQuestionId}
-            onValueChange={(targetQuestionId) => updateRule(rule.id, { targetQuestionId })}
+            onValueChange={(targetQuestionId) =>
+              updateRule(rule.id, { targetQuestionId: targetQuestionId ?? "end" })
+            }
           >
             <SelectTrigger size="sm" className="w-40">
               <SelectValue />

@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://formedible.dev"),
   title: "Formedible - Schema-Driven Forms Made Simple",
   description:
     "A powerful React hook that wraps TanStack Form with shadcn/ui components. Features schema validation, multi-page support, component overrides, and custom wrappers.",
@@ -62,12 +63,6 @@ export default function RootLayout({
           <Header />
           {children}
         </Providers>
-        <script
-          src="https://tasu.ai/widget/v1.js"
-          data-company="formedible-dev"
-          data-color="#F7931A"
-          async
-        ></script>
       </body>
     </html>
   );

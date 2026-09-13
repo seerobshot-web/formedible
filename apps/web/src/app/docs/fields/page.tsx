@@ -27,11 +27,9 @@ export default function FieldsPage() {
           {/* Header */}
           <div className="mb-12">
             <div className="flex items-center gap-4 mb-6">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/docs">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Docs
-                </Link>
+              <Button variant="ghost" size="sm" render={<Link href="/docs" />} nativeButton={false}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Docs
               </Button>
             </div>
 
@@ -41,7 +39,7 @@ export default function FieldsPage() {
                 Field Types
               </Badge>
               <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-muted-foreground bg-clip-text text-transparent">
-                20+ Beautiful Field Components
+                15+ Beautiful Field Components
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 Explore our comprehensive collection of pre-built field
@@ -176,6 +174,65 @@ export default function FieldsPage() {
                 </div>
 
                 <div>
+                  <h4 className="font-semibold text-lg mb-2">Combobox Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Searchable dropdown with command palette interface and keyboard navigation.
+                  </p>
+                  <CodeBlock
+                    code={`{
+  name: 'framework',
+  type: 'combobox',
+  label: 'Framework',
+  options: [
+    { value: 'react', label: 'React' },
+    { value: 'vue', label: 'Vue.js' },
+    { value: 'angular', label: 'Angular' },
+    { value: 'svelte', label: 'Svelte' }
+  ],
+  comboboxConfig: {
+    searchable: true,
+    placeholder: 'Select framework...',
+    searchPlaceholder: 'Search frameworks...',
+    noOptionsText: 'No framework found.'
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Multi-Combobox Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Multi-select combobox with command palette interface, search, and keyboard navigation.
+                  </p>
+                  <CodeBlock
+                    code={`{
+  name: 'skills',
+  type: 'multicombobox',
+  label: 'Skills',
+  options: [
+    { value: 'react', label: 'React' },
+    { value: 'vue', label: 'Vue.js' },
+    { value: 'angular', label: 'Angular' },
+    { value: 'svelte', label: 'Svelte' },
+    { value: 'typescript', label: 'TypeScript' },
+    { value: 'javascript', label: 'JavaScript' }
+  ],
+  multiComboboxConfig: {
+    searchable: true,
+    creatable: true,
+    maxSelections: 3,
+    placeholder: 'Select skills...',
+    searchPlaceholder: 'Search skills...',
+    noOptionsText: 'No skills found.'
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+                <div>
                   <h4 className="font-semibold text-lg mb-2">Radio Field</h4>
                   <p className="text-muted-foreground text-sm mb-4">
                     Radio button group for single selection.
@@ -221,6 +278,196 @@ export default function FieldsPage() {
             </DocCard>
 
             <DocCard
+              title="Complex Fields"
+              description="Dynamic components for handling arrays, objects, and specialized data structures."
+              icon={Layers}
+            >
+              <div className="space-y-8">
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Array Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Dynamic list of items with add/remove functionality, sorting, and nested field support.
+                  </p>
+                  <CodeBlock
+                    code={`// Simple text array
+{
+  name: 'tags',
+  type: 'array',
+  label: 'Tags',
+  arrayConfig: {
+    itemType: 'text',
+    itemLabel: 'Tag',
+    itemPlaceholder: 'Enter tag...',
+    minItems: 1,
+    maxItems: 10,
+    addButtonLabel: 'Add Tag',
+    sortable: true,
+    defaultValue: ''
+  }
+}
+
+// Complex object array
+{
+  name: 'teamMembers',
+  type: 'array',
+  label: 'Team Members',
+  arrayConfig: {
+    itemType: 'object',
+    itemLabel: 'Team Member',
+    minItems: 1,
+    maxItems: 5,
+    sortable: true,
+    defaultValue: { name: '', role: '', email: '' },
+    objectConfig: {
+      fields: [
+        { name: 'name', type: 'text', label: 'Name' },
+        { name: 'role', type: 'select', label: 'Role', 
+          options: ['Developer', 'Designer', 'Manager'] },
+        { name: 'email', type: 'email', label: 'Email' }
+      ]
+    }
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Object Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Group related fields together with optional collapsible sections.
+                  </p>
+                  <CodeBlock
+                    code={`{
+  name: 'address',
+  type: 'object',
+  label: 'Address Information',
+  objectConfig: {
+    title: 'Shipping Address',
+    description: 'Enter your shipping details',
+    collapsible: true,
+    defaultExpanded: true,
+    fields: [
+      { name: 'street', type: 'text', label: 'Street Address' },
+      { name: 'city', type: 'text', label: 'City' },
+      { name: 'state', type: 'select', label: 'State', options: [...] },
+      { name: 'zipCode', type: 'text', label: 'ZIP Code' }
+    ]
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Multi-Select Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Select multiple options with search and create functionality.
+                  </p>
+                  <CodeBlock
+                    code={`{
+  name: 'skills',
+  type: 'multiselect',
+  label: 'Skills',
+  multiSelectConfig: {
+    options: [
+      { value: 'react', label: 'React' },
+      { value: 'typescript', label: 'TypeScript' },
+      { value: 'nodejs', label: 'Node.js' }
+    ],
+    maxSelections: 5,
+    searchable: true,
+    creatable: true,
+    placeholder: 'Select or create skills...'
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+              </div>
+            </DocCard>
+
+            <DocCard
+              title="Specialized Fields"
+              description="Advanced components for specific data types and user interactions."
+              icon={Palette}
+            >
+              <div className="space-y-8">
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Phone Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    International phone number input with country selection.
+                  </p>
+                  <CodeBlock
+                    code={`{
+  name: 'phone',
+  type: 'phone',
+  label: 'Phone Number',
+  phoneConfig: {
+    defaultCountry: 'US',
+    format: 'international',
+    preferredCountries: ['US', 'CA', 'GB'],
+    placeholder: 'Enter phone number'
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Color Picker Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Color selection with preview and preset colors.
+                  </p>
+                  <CodeBlock
+                    code={`{
+  name: 'brandColor',
+  type: 'color',
+  label: 'Brand Color',
+  colorConfig: {
+    format: 'hex',
+    showPreview: true,
+    showAlpha: false,
+    presetColors: ['#ff0000', '#00ff00', '#0000ff'],
+    allowCustom: true
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Rating Field</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Star rating with customizable icons and precision.
+                  </p>
+                  <CodeBlock
+                    code={`{
+  name: 'satisfaction',
+  type: 'rating',
+  label: 'Satisfaction Rating',
+  ratingConfig: {
+    max: 5,
+    allowHalf: true,
+    allowClear: true,
+    icon: 'star',
+    size: 'lg',
+    showValue: true
+  }
+}`}
+                    language="tsx"
+                    darkMode={darkMode}
+                  />
+                </div>
+              </div>
+            </DocCard>
+
+            <DocCard
               title="Advanced Fields"
               description="Specialized components for dates, files, sliders, and more complex interactions."
               icon={Palette}
@@ -229,10 +476,11 @@ export default function FieldsPage() {
                 <div>
                   <h4 className="font-semibold text-lg mb-2">Date Field</h4>
                   <p className="text-muted-foreground text-sm mb-4">
-                    Date picker with calendar interface.
+                    Advanced date picker with calendar interface and comprehensive date restrictions.
                   </p>
                   <CodeBlock
-                    code={`{
+                    code={`// Basic date picker
+{
   name: 'birthDate',
   type: 'date',
   label: 'Birth Date',
@@ -240,10 +488,46 @@ export default function FieldsPage() {
     format: 'yyyy-MM-dd',
     placeholder: 'Select your birth date'
   }
+}
+
+// Advanced date picker with restrictions
+{
+  name: 'appointmentDate',
+  type: 'date',
+  label: 'Appointment Date',
+  dateConfig: {
+    // Disable past dates
+    disablePastDates: true,
+    
+    // Disable specific days of week (0=Sunday, 6=Saturday)
+    disabledDaysOfWeek: [0, 6], // Disable weekends
+    
+    // Disable date ranges
+    disabledDateRanges: [
+      { from: new Date('2024-12-25'), to: new Date('2024-12-25') }, // Christmas
+      { from: new Date('2024-07-01'), to: new Date('2024-07-07') }  // Holiday week
+    ],
+    
+    // Custom disable function with access to form values
+    disableDate: (date, formValues) => {
+      // Disable dates based on other form field values
+      if (formValues?.urgency === 'urgent') {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return date < tomorrow; // Only allow dates after tomorrow
+      }
+      return false;
+    }
+  }
 }`}
                     language="tsx"
                     darkMode={darkMode}
                   />
+                  <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Enhanced Features:</strong> Disable past/future dates • Block specific weekdays • Custom date ranges • Dynamic restrictions based on form values • Full calendar accessibility
+                    </p>
+                  </div>
                 </div>
 
                 <div>
@@ -385,12 +669,8 @@ export default function FieldsPage() {
                 minimal effort.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" asChild>
-                  <Link href="/docs/getting-started">Get Started</Link>
-                </Button>
-                <Button variant="outline" size="lg" asChild>
-                  <Link href="/builder">Try Builder</Link>
-                </Button>
+                <Button size="lg" render={<Link href="/docs/getting-started" />} nativeButton={false}>Get Started</Button>
+                <Button variant="outline" size="lg" render={<Link href="/builder" />} nativeButton={false}>Try Builder</Button>
               </div>
             </div>
           </div>

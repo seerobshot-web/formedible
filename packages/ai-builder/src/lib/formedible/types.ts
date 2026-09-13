@@ -1,7 +1,12 @@
-import React from 'react';
-import type { AnyFieldApi } from '@tanstack/react-form';
-import type { FormApi, ValidationError, FormState } from '@tanstack/form-core';
-import { z } from 'zod';
+import React from "react";
+import type { AnyFieldApi } from "@tanstack/react-form";
+import type {
+  FormApi,
+  ValidationError,
+  FormState,
+  AnyFormApi,
+} from "@tanstack/form-core";
+import { z } from "zod";
 
 // Strict type definitions for better type safety
 export interface StrictFieldApi<T = unknown> {
@@ -23,8 +28,25 @@ export interface TypedFormState<TFormData = Record<string, unknown>> {
   canSubmit: boolean;
 }
 
-export interface TypedFormSubscriptionSelector<TFormData = Record<string, unknown>, TSelected = unknown> {
-  (state: FormState<TFormData, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined>): TSelected;
+export interface TypedFormSubscriptionSelector<
+  TFormData = Record<string, unknown>,
+  TSelected = unknown
+> {
+  (
+    state: FormState<
+      TFormData,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    >
+  ): TSelected;
 }
 
 // Validation error types based on TanStack Form
@@ -77,8 +99,8 @@ export interface BaseFieldProps {
   label?: string;
   description?: string;
   placeholder?: string;
-  inputClassName?: string;   // For the <Input /> component itself
-  labelClassName?: string;   // For the <Label /> component
+  inputClassName?: string; // For the <Input /> component itself
+  labelClassName?: string; // For the <Label /> component
   wrapperClassName?: string; // For the div wrapping label and input
 }
 
@@ -98,6 +120,54 @@ export interface MultiSelectFieldProps extends BaseFieldProps {
   maxSelections?: number;
 }
 
+export interface ComboboxFieldSpecificProps extends BaseFieldProps {
+  options: Array<{ value: string; label: string }> | string[];
+  comboboxConfig?: {
+    searchable?: boolean;
+    placeholder?: string;
+    searchPlaceholder?: string;
+    noOptionsText?: string;
+    allowClear?: boolean;
+  };
+}
+
+export interface ComboboxFieldProps extends BaseFieldProps {
+  options: FieldOptions;
+  placeholder?: string;
+  comboboxConfig?: {
+    searchable?: boolean;
+    searchPlaceholder?: string;
+    noOptionsText?: string;
+    allowClear?: boolean;
+  };
+}
+
+export interface MultiComboboxFieldSpecificProps extends BaseFieldProps {
+  options: Array<{ value: string; label: string }> | string[];
+  placeholder?: string;
+  multiComboboxConfig?: {
+    maxSelections?: number;
+    searchable?: boolean;
+    creatable?: boolean;
+    placeholder?: string;
+    searchPlaceholder?: string;
+    noOptionsText?: string;
+  };
+}
+
+export interface MultiComboboxFieldProps extends BaseFieldProps {
+  options: FieldOptions;
+  placeholder?: string;
+  multiComboboxConfig?: {
+    maxSelections?: number;
+    searchable?: boolean;
+    creatable?: boolean;
+    placeholder?: string;
+    searchPlaceholder?: string;
+    noOptionsText?: string;
+  };
+}
+
 // Shared object configuration interface - DRY!
 export interface ObjectConfig {
   title?: string;
@@ -108,7 +178,12 @@ export interface ObjectConfig {
     label?: DynamicText;
     placeholder?: DynamicText;
     description?: DynamicText;
-    options?: string[] | Array<{ value: string; label: string }> | ((values: Record<string, unknown>) => string[] | Array<{ value: string; label: string }>);
+    options?:
+      | string[]
+      | Array<{ value: string; label: string }>
+      | ((
+          values: Record<string, unknown>
+        ) => string[] | Array<{ value: string; label: string }>);
     min?: number;
     max?: number;
     step?: number;
@@ -143,7 +218,7 @@ export interface ArrayFieldProps extends BaseFieldProps {
 }
 
 export interface TextFieldProps extends BaseFieldProps {
-  type?: 'text' | 'email' | 'password' | 'url' | 'tel';
+  type?: "text" | "email" | "password" | "url" | "tel";
   datalist?: string[];
   maxLength?: number;
   minLength?: number;
@@ -166,6 +241,22 @@ export interface DateFieldProps extends BaseFieldProps {
     disabledDates?: Date[];
     showTime?: boolean;
     timeFormat?: string;
+    
+    // Days of week restrictions (0=Sunday, 6=Saturday)
+    disabledDaysOfWeek?: number[];
+    
+    // Date range restrictions  
+    disabledDateRanges?: Array<{
+      from: Date;
+      to: Date;
+    }>;
+    
+    // Past/Future restrictions
+    disablePastDates?: boolean;
+    disableFutureDates?: boolean;
+    
+    // Custom disable function (with optional form values access)
+    disableDate?: (date: Date, formValues?: Record<string, any>) => boolean;
   };
 }
 
@@ -184,7 +275,7 @@ export interface SliderFieldProps extends BaseFieldProps {
     gradientColors?: {
       start: string;
       end: string;
-      direction?: 'horizontal' | 'vertical';
+      direction?: "horizontal" | "vertical";
     };
     // Custom visualization component for each step
     visualizationComponent?: React.ComponentType<{
@@ -201,7 +292,7 @@ export interface SliderFieldProps extends BaseFieldProps {
     showValue?: boolean;
     showTooltip?: boolean;
     showTicks?: boolean;
-    orientation?: 'horizontal' | 'vertical';
+    orientation?: "horizontal" | "vertical";
     marks?: Array<{ value: number; label: string }>;
   };
 }
@@ -236,7 +327,7 @@ export interface MaskedInputFieldProps extends BaseFieldProps {
 
 export interface ColorPickerFieldProps extends BaseFieldProps {
   colorConfig?: {
-    format?: 'hex' | 'rgb' | 'hsl';
+    format?: "hex" | "rgb" | "hsl";
     showPreview?: boolean; // Show color preview
     showAlpha?: boolean;
     presetColors?: string[];
@@ -249,8 +340,8 @@ export interface RatingFieldProps extends BaseFieldProps {
     max?: number;
     allowHalf?: boolean;
     allowClear?: boolean;
-    icon?: 'star' | 'heart' | 'thumbs' | React.ComponentType;
-    size?: 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
+    icon?: "star" | "heart" | "thumbs" | React.ComponentType;
+    size?: "sm" | "md" | "lg" | "small" | "medium" | "large";
     showValue?: boolean;
   };
 }
@@ -261,14 +352,14 @@ export interface PhoneFieldProps extends BaseFieldProps {
     preferredCountries?: string[];
     onlyCountries?: string[];
     excludeCountries?: string[];
-    format?: 'national' | 'international';
+    format?: "national" | "international";
   };
 }
 
 export interface ObjectFieldProps extends BaseFieldProps {
   objectConfig?: ObjectConfig;
   disabled?: boolean;
-  form?: any;
+  form?: AnyFormApi;
 }
 
 // Field-specific interfaces moved from field components for centralization
@@ -295,13 +386,13 @@ export interface TextareaFieldSpecificProps extends BaseFieldProps {
 
 export interface RadioFieldSpecificProps extends BaseFieldProps {
   options: Array<{ value: string; label: string }> | string[];
-  direction?: 'horizontal' | 'vertical';
+  direction?: "horizontal" | "vertical";
 }
 
 export interface PhoneFieldSpecificProps extends BaseFieldProps {
   phoneConfig?: {
     defaultCountry?: string;
-    format?: 'national' | 'international';
+    format?: "national" | "international";
     allowedCountries?: string[];
     placeholder?: string;
     excludedCountries?: string[];
@@ -320,9 +411,20 @@ export interface MultiSelectFieldSpecificProps extends BaseFieldProps {
   };
 }
 
+export interface ComboboxFieldSpecificProps extends BaseFieldProps {
+  options: Array<{ value: string; label: string }> | string[];
+  comboboxConfig?: {
+    searchable?: boolean;
+    placeholder?: string;
+    searchPlaceholder?: string;
+    noOptionsText?: string;
+    allowClear?: boolean;
+  };
+}
+
 export interface ColorPickerFieldSpecificProps extends BaseFieldProps {
   colorConfig?: {
-    format?: 'hex' | 'rgb' | 'hsl';
+    format?: "hex" | "rgb" | "hsl";
     showPreview?: boolean;
     presetColors?: string[];
     allowCustom?: boolean;
@@ -334,8 +436,8 @@ export interface RatingFieldSpecificProps extends BaseFieldProps {
   ratingConfig?: {
     max?: number;
     allowHalf?: boolean;
-    icon?: 'star' | 'heart' | 'thumbs';
-    size?: 'sm' | 'md' | 'lg';
+    icon?: "star" | "heart" | "thumbs";
+    size?: "sm" | "md" | "lg";
     allowClear?: boolean;
     showValue?: boolean;
   };
@@ -356,7 +458,7 @@ export interface SliderFieldSpecificProps extends BaseFieldProps {
     gradientColors?: {
       start: string;
       end: string;
-      direction?: 'horizontal' | 'vertical';
+      direction?: "horizontal" | "vertical";
     };
     // Custom visualization component for each step
     visualizationComponent?: React.ComponentType<{
@@ -372,7 +474,7 @@ export interface SliderFieldSpecificProps extends BaseFieldProps {
     showRawValue?: boolean;
     showValue?: boolean;
     showTooltip?: boolean;
-    orientation?: 'horizontal' | 'vertical';
+    orientation?: "horizontal" | "vertical";
     marks?: Array<{ value: number; label: string }>;
   };
   // Direct props for backwards compatibility
@@ -389,7 +491,20 @@ export interface SliderFieldSpecificProps extends BaseFieldProps {
 export interface FormGridProps {
   children: React.ReactNode;
   columns?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
-  gap?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12';
+  gap?:
+    | "0"
+    | "1"
+    | "2"
+    | "3"
+    | "4"
+    | "5"
+    | "6"
+    | "7"
+    | "8"
+    | "9"
+    | "10"
+    | "11"
+    | "12";
   responsive?: boolean;
   className?: string;
 }
@@ -414,7 +529,7 @@ export interface FormAccordionProps {
     content: React.ReactNode;
     defaultOpen?: boolean;
   }[];
-  type?: 'single' | 'multiple';
+  type?: "single" | "multiple";
   className?: string;
 }
 
@@ -460,20 +575,20 @@ export interface InlineValidationWrapperProps {
 export type FieldComponentProps = BaseFieldProps & {
   // Optional props that specific field types might need
   options?: FieldOptions;
-  arrayConfig?: ArrayFieldProps['arrayConfig'];
+  arrayConfig?: ArrayFieldProps["arrayConfig"];
   objectConfig?: ObjectConfig;
-  type?: TextFieldProps['type'];
+  type?: TextFieldProps["type"];
   datalist?: string[];
-  dateConfig?: DateFieldProps['dateConfig'];
-  sliderConfig?: SliderFieldProps['sliderConfig'];
-  fileConfig?: FileUploadFieldProps['fileConfig'];
-  locationConfig?: LocationPickerFieldProps['locationConfig'];
-  durationConfig?: DurationPickerFieldProps['durationConfig'];
-  autocompleteConfig?: AutocompleteFieldProps['autocompleteConfig'];
-  maskedConfig?: MaskedInputFieldProps['maskedConfig'];
-  colorConfig?: ColorPickerFieldProps['colorConfig'];
-  ratingConfig?: RatingFieldProps['ratingConfig'];
-  phoneConfig?: PhoneFieldProps['phoneConfig'];
+  dateConfig?: DateFieldProps["dateConfig"];
+  sliderConfig?: SliderFieldProps["sliderConfig"];
+  fileConfig?: FileUploadFieldProps["fileConfig"];
+  locationConfig?: LocationPickerFieldProps["locationConfig"];
+  durationConfig?: DurationPickerFieldProps["durationConfig"];
+  autocompleteConfig?: AutocompleteFieldProps["autocompleteConfig"];
+  maskedConfig?: MaskedInputFieldProps["maskedConfig"];
+  colorConfig?: ColorPickerFieldProps["colorConfig"];
+  ratingConfig?: RatingFieldProps["ratingConfig"];
+  phoneConfig?: PhoneFieldProps["phoneConfig"];
   // Legacy support for existing configurations
   multiSelectConfig?: {
     maxSelections?: number;
@@ -483,6 +598,7 @@ export type FieldComponentProps = BaseFieldProps & {
     noOptionsText?: string;
     loadingText?: string;
   };
+  comboboxConfig?: ComboboxConfig;
   maskedInputConfig?: MaskedInputConfig;
   // Allow additional props for extensibility
   [key: string]: unknown;
@@ -507,33 +623,100 @@ export interface FormAnalytics {
   // Field-level analytics
   onFieldFocus?: (fieldName: string, timestamp: number) => void;
   onFieldBlur?: (fieldName: string, timeSpent: number) => void;
-  onFieldChange?: (fieldName: string, value: unknown, timestamp: number) => void;
-  onFieldComplete?: (fieldName: string, isValid: boolean, timeSpent: number) => void;
-  onFieldError?: (fieldName: string, errors: string[], timestamp: number) => void;
-  
+  onFieldChange?: (
+    fieldName: string,
+    value: unknown,
+    timestamp: number
+  ) => void;
+  onFieldComplete?: (
+    fieldName: string,
+    isValid: boolean,
+    timeSpent: number
+  ) => void;
+  onFieldError?: (
+    fieldName: string,
+    errors: string[],
+    timestamp: number
+  ) => void;
+
   // Form-level analytics
   onFormStart?: (timestamp: number) => void;
   onFormComplete?: (timeSpent: number, formData: unknown) => void;
-  onFormAbandon?: (completionPercentage: number, context?: { currentPage?: number; currentTab?: string; lastActiveField?: string }) => void;
+  onFormAbandon?: (
+    completionPercentage: number,
+    context?: {
+      currentPage?: number;
+      currentTab?: string;
+      lastActiveField?: string;
+    }
+  ) => void;
   onFormReset?: (timestamp: number, reason?: string) => void;
-  
+
   // Page-level analytics (for multi-page forms)
-  onPageChange?: (fromPage: number, toPage: number, timeSpent: number, pageValidationState?: { hasErrors: boolean; completionPercentage: number }) => void;
-  onPageComplete?: (pageNumber: number, timeSpent: number, fieldsCompleted: number, totalFields: number) => void;
-  onPageAbandon?: (pageNumber: number, completionPercentage: number, timeSpent: number) => void;
-  onPageValidationError?: (pageNumber: number, errors: Record<string, string[]>, timestamp: number) => void;
-  
+  onPageChange?: (
+    fromPage: number,
+    toPage: number,
+    timeSpent: number,
+    pageValidationState?: { hasErrors: boolean; completionPercentage: number }
+  ) => void;
+  onPageComplete?: (
+    pageNumber: number,
+    timeSpent: number,
+    fieldsCompleted: number,
+    totalFields: number
+  ) => void;
+  onPageAbandon?: (
+    pageNumber: number,
+    completionPercentage: number,
+    timeSpent: number
+  ) => void;
+  onPageValidationError?: (
+    pageNumber: number,
+    errors: Record<string, string[]>,
+    timestamp: number
+  ) => void;
+
   // Tab-level analytics (for tabbed forms)
-  onTabChange?: (fromTab: string, toTab: string, timeSpent: number, tabCompletionState?: { completionPercentage: number; hasErrors: boolean }) => void;
-  onTabComplete?: (tabId: string, timeSpent: number, fieldsCompleted: number, totalFields: number) => void;
-  onTabAbandon?: (tabId: string, completionPercentage: number, timeSpent: number) => void;
-  onTabValidationError?: (tabId: string, errors: Record<string, string[]>, timestamp: number) => void;
+  onTabChange?: (
+    fromTab: string,
+    toTab: string,
+    timeSpent: number,
+    tabCompletionState?: { completionPercentage: number; hasErrors: boolean }
+  ) => void;
+  onTabComplete?: (
+    tabId: string,
+    timeSpent: number,
+    fieldsCompleted: number,
+    totalFields: number
+  ) => void;
+  onTabAbandon?: (
+    tabId: string,
+    completionPercentage: number,
+    timeSpent: number
+  ) => void;
+  onTabValidationError?: (
+    tabId: string,
+    errors: Record<string, string[]>,
+    timestamp: number
+  ) => void;
   onTabFirstVisit?: (tabId: string, timestamp: number) => void;
-  
+
   // Performance analytics
-  onRenderPerformance?: (componentName: string, renderTime: number, rerenderCount: number) => void;
-  onValidationPerformance?: (fieldName: string, validationType: 'sync' | 'async', duration: number) => void;
-  onSubmissionPerformance?: (submissionTime: number, validationTime: number, processingTime: number) => void;
+  onRenderPerformance?: (
+    componentName: string,
+    renderTime: number,
+    rerenderCount: number
+  ) => void;
+  onValidationPerformance?: (
+    fieldName: string,
+    validationType: "sync" | "async",
+    duration: number
+  ) => void;
+  onSubmissionPerformance?: (
+    submissionTime: number,
+    validationTime: number,
+    processingTime: number
+  ) => void;
 }
 
 // Tab analytics state tracking
@@ -548,7 +731,7 @@ export interface TabAnalyticsState {
   completionPercentage: number;
 }
 
-// Page analytics state tracking  
+// Page analytics state tracking
 export interface PageAnalyticsState {
   pageNumber: number;
   startTime: number;
@@ -585,18 +768,21 @@ export interface AnalyticsContext {
   pageStates: Record<number, PageAnalyticsState>;
   tabStates: Record<string, TabAnalyticsState>;
   performanceMetrics: PerformanceMetrics;
-  fieldInteractions: Record<string, {
-    focusCount: number;
-    totalTimeSpent: number;
-    changeCount: number;
-    errorCount: number;
-    isCompleted: boolean;
-  }>;
+  fieldInteractions: Record<
+    string,
+    {
+      focusCount: number;
+      totalTimeSpent: number;
+      changeCount: number;
+      errorCount: number;
+      isCompleted: boolean;
+    }
+  >;
 }
 
 // Layout configuration for forms
 export interface LayoutConfig {
-  type: 'grid' | 'flex' | 'tabs' | 'accordion' | 'stepper';
+  type: "grid" | "flex" | "tabs" | "accordion" | "stepper";
   columns?: number;
   gap?: string;
   responsive?: boolean;
@@ -640,27 +826,37 @@ export interface LocationConfig {
   enableGeolocation?: boolean;
   enableManualEntry?: boolean;
   showMap?: boolean;
-  
+
   // Map provider - determines which map component to render
-  mapProvider?: 'google' | 'openstreetmap' | 'bing' | 'custom' | 'cartodb' | 'stamen' | 'satellite';
-  
+  mapProvider?:
+    | "google"
+    | "openstreetmap"
+    | "bing"
+    | "custom"
+    | "cartodb"
+    | "stamen"
+    | "satellite";
+
   // User-defined search function
   // This function should handle the API calls to your preferred geocoding service
-  searchCallback?: (query: string, options?: {
-    // Optional parameters that can be passed to the search
-    limit?: number;
-    countryCode?: string;
-    bounds?: {
-      northeast: { lat: number; lng: number };
-      southwest: { lat: number; lng: number };
-    };
-    [key: string]: any;
-  }) => Promise<LocationSearchResult[]>;
-  
+  searchCallback?: (
+    query: string,
+    options?: {
+      // Optional parameters that can be passed to the search
+      limit?: number;
+      countryCode?: string;
+      bounds?: {
+        northeast: { lat: number; lng: number };
+        southwest: { lat: number; lng: number };
+      };
+      [key: string]: any;
+    }
+  ) => Promise<LocationSearchResult[]>;
+
   // User-defined reverse geocoding function
   // This function should convert coordinates back to an address
   reverseGeocodeCallback?: (lat: number, lng: number) => Promise<LocationValue>;
-  
+
   // Map rendering callback - allows complete customization of map display
   mapRenderCallback?: (params: {
     location: LocationValue | null;
@@ -675,7 +871,7 @@ export interface LocationConfig {
     // Update location on map
     updateLocation?: (location: LocationValue) => void;
   };
-  
+
   // Provider-specific configuration
   googleMaps?: {
     apiKey: string;
@@ -683,7 +879,7 @@ export interface LocationConfig {
     mapOptions?: any; // Google Maps MapOptions
     searchOptions?: any; // Google Places search options
   };
-  
+
   openStreetMap?: {
     tileServer?: string; // Custom tile server URL
     attribution?: string;
@@ -695,18 +891,18 @@ export interface LocationConfig {
       [key: string]: any;
     };
   };
-  
+
   bingMaps?: {
     apiKey: string;
     mapOptions?: any; // Bing Maps options
     searchOptions?: any; // Bing geocoding options
   };
-  
+
   // Custom provider configuration
   custom?: {
     [key: string]: any;
   };
-  
+
   // Search behavior
   searchOptions?: {
     debounceMs?: number;
@@ -719,7 +915,7 @@ export interface LocationConfig {
     };
     [key: string]: any;
   };
-  
+
   // UI customization
   ui?: {
     showCoordinates?: boolean;
@@ -727,7 +923,7 @@ export interface LocationConfig {
     mapHeight?: number;
     searchInputClassName?: string;
     mapClassName?: string;
-    coordinatesFormat?: 'decimal' | 'dms'; // Decimal degrees or degrees/minutes/seconds
+    coordinatesFormat?: "decimal" | "dms"; // Decimal degrees or degrees/minutes/seconds
     [key: string]: any;
   };
 }
@@ -741,7 +937,7 @@ export interface DurationValue {
 }
 
 export interface DurationConfig {
-  format?: 'hms' | 'hm' | 'ms' | 'hours' | 'minutes' | 'seconds';
+  format?: "hms" | "hm" | "ms" | "hours" | "minutes" | "seconds";
   maxHours?: number;
   maxMinutes?: number;
   maxSeconds?: number;
@@ -752,7 +948,9 @@ export interface DurationConfig {
 // Autocomplete configuration
 export interface AutocompleteConfig {
   options?: string[] | { value: string; label: string }[];
-  asyncOptions?: (query: string) => Promise<string[] | { value: string; label: string }[]>;
+  asyncOptions?: (
+    query: string
+  ) => Promise<string[] | { value: string; label: string }[]>;
   debounceMs?: number;
   minChars?: number;
   maxResults?: number;
@@ -769,7 +967,10 @@ export interface MaskedInputConfig {
   showMask?: boolean;
   guide?: boolean;
   keepCharPositions?: boolean;
-  pipe?: (conformedValue: string, config: unknown) => false | string | { value: string; indexesOfPipedChars: number[] };
+  pipe?: (
+    conformedValue: string,
+    config: unknown
+  ) => false | string | { value: string; indexesOfPipedChars: number[] };
 }
 
 // Field validation configuration
@@ -795,7 +996,7 @@ export interface FieldValidationConfig {
 export interface FieldHelpConfig {
   text?: string;
   tooltip?: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: "top" | "bottom" | "left" | "right";
   link?: { url: string; text: string };
 }
 
@@ -828,7 +1029,7 @@ export interface DatalistConfig {
 export interface TextareaConfig {
   rows?: number;
   cols?: number;
-  resize?: 'none' | 'vertical' | 'horizontal' | 'both';
+  resize?: "none" | "vertical" | "horizontal" | "both";
   maxLength?: number;
   showWordCount?: boolean;
 }
@@ -873,6 +1074,15 @@ export interface MultiSelectConfig {
   placeholder?: string;
   noOptionsText?: string;
   loadingText?: string;
+}
+
+// Combobox configuration
+export interface ComboboxConfig {
+  searchable?: boolean;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  noOptionsText?: string;
+  allowClear?: boolean;
 }
 
 // Hook interfaces moved from use-formedible.tsx for centralization
@@ -949,6 +1159,8 @@ export interface SectionRendererProps {
 export interface UseFormedibleOptions<TFormValues> {
   fields?: FieldConfig[];
   schema?: z.ZodSchema<TFormValues>;
+  title?: string;
+  description?: string;
   submitLabel?: string;
   nextLabel?: string;
   previousLabel?: string;
@@ -1100,53 +1312,65 @@ export interface FieldConfig {
   description?: DynamicText;
   required?: boolean;
   defaultValue?: unknown;
-  options?: string[] | { value: string; label: string }[] | ((values: Record<string, unknown>) => string[] | { value: string; label: string }[]);
+  options?:
+    | string[]
+    | { value: string; label: string }[]
+    | ((
+        values: Record<string, unknown>
+      ) => string[] | { value: string; label: string }[]);
   min?: number;
   max?: number;
   step?: number;
   accept?: string;
   multiple?: boolean;
   component?: React.ComponentType<FieldComponentProps>;
-  wrapper?: React.ComponentType<{ children: React.ReactNode; field: FieldConfig }>;
+  wrapper?: React.ComponentType<{
+    children: React.ReactNode;
+    field: FieldConfig;
+  }>;
   page?: number;
   tab?: string;
   validation?: z.ZodSchema<unknown>;
   dependencies?: string[];
   conditional?: (values: Record<string, unknown>) => boolean;
   group?: string;
-  
+
   // Grid positioning properties
   gridColumn?: number; // Specific column to place this field (1-based)
   gridRow?: number; // Specific row to place this field (1-based)
   gridColumnSpan?: number; // How many columns this field should span
   gridRowSpan?: number; // How many rows this field should span
   gridArea?: string; // CSS grid-area value for advanced positioning
-  
+
   // Configuration objects using existing types
-  arrayConfig?: ArrayFieldProps['arrayConfig'];
-  ratingConfig?: RatingFieldProps['ratingConfig'];
-  phoneConfig?: PhoneFieldProps['phoneConfig'];
-  colorConfig?: ColorPickerFieldProps['colorConfig'];
+  arrayConfig?: ArrayFieldProps["arrayConfig"];
+  ratingConfig?: RatingFieldProps["ratingConfig"];
+  phoneConfig?: PhoneFieldProps["phoneConfig"];
+  colorConfig?: ColorPickerFieldProps["colorConfig"];
   multiSelectConfig?: MultiSelectConfig;
+  comboboxConfig?: ComboboxConfig;
   locationConfig?: LocationConfig;
   durationConfig?: DurationConfig;
   autocompleteConfig?: AutocompleteConfig;
   maskedInputConfig?: MaskedInputConfig;
   objectConfig?: ObjectConfig;
-  sliderConfig?: SliderFieldProps['sliderConfig'];
+  sliderConfig?: SliderFieldProps["sliderConfig"];
   numberConfig?: NumberConfig;
-  dateConfig?: DateFieldProps['dateConfig'];
-  fileConfig?: FileUploadFieldProps['fileConfig'];
+  dateConfig?: DateFieldProps["dateConfig"];
+  fileConfig?: FileUploadFieldProps["fileConfig"];
   textareaConfig?: TextareaConfig;
   passwordConfig?: PasswordConfig;
   emailConfig?: EmailConfig;
-  
+
   // Additional configurations
   datalist?: DatalistConfig;
   help?: FieldHelpConfig;
   inlineValidation?: InlineValidationConfig;
   section?: SectionConfig;
   validationConfig?: FieldValidationConfig;
+
+  // Allow additional unknown configurations for extensibility
+  [key: string]: unknown;
 }
 
 // Page configuration for multi-page forms
@@ -1175,4 +1399,4 @@ export interface ProgressConfig {
   showSteps?: boolean;
   showPercentage?: boolean;
   className?: string;
-} 
+}

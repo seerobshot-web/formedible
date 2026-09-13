@@ -15,6 +15,8 @@ import {
   BarChart3,
   Wrench,
   Settings,
+  FileJson,
+  Bot,
 } from "lucide-react";
 import {
   Card,
@@ -50,6 +52,15 @@ export default function DocsPage() {
       href: "/docs/getting-started",
       color: "text-primary",
       badge: "Start Here",
+    },
+    {
+      title: "Examples",
+      description:
+        "Real-world form implementations from simple to complex use cases",
+      icon: Book,
+      href: "/docs/examples",
+      color: "text-warning",
+      badge: null,
     },
     {
       title: "Field Types",
@@ -124,21 +135,30 @@ export default function DocsPage() {
       badge: "Overview",
     },
     {
+      title: "Formedible Parser",
+      description:
+        "Safe parser for form definitions supporting JSON, JavaScript objects, and Zod schemas",
+      icon: FileJson,
+      href: "/docs/formedible-parser",
+      color: "text-info",
+      badge: "Parser",
+    },
+    {
+      title: "AI Form Builder",
+      description:
+        "AI-powered form generation with multiple providers and conversational interface",
+      icon: Bot,
+      href: "/docs/ai-builder",
+      color: "text-primary",
+      badge: "AI-Powered",
+    },
+    {
       title: "API Reference",
       description:
         "Complete documentation of hooks, props, and configuration options",
       icon: Code,
       href: "/docs/api",
       color: "text-muted-foreground",
-      badge: null,
-    },
-    {
-      title: "Examples",
-      description:
-        "Real-world form implementations from simple to complex use cases",
-      icon: Book,
-      href: "/docs/examples",
-      color: "text-warning",
       badge: null,
     },
   ];
