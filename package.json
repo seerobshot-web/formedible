@@ -4,7 +4,8 @@
   "main": "index.js",
   "packageManager": "npm@10.0.0",
   "scripts": {
-    "build": "turbo build",
+    "build": "npm run build --workspace=web",
+    "build:all": "turbo build",
     "build:web": "turbo -F web build",
     "build:pkg": "turbo -F formedible build",
     "build:builder": "turbo -F formedible-builder build",
